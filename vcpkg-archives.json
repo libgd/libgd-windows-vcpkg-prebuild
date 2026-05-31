@@ -18,7 +18,9 @@
         "tiff",
         "x265",
         "zlib",
-        "libiconv"
+        "libiconv",
+        "freetype",
+        "exiv2"
       ]
     },
     {
@@ -38,7 +40,9 @@
         "tiff",
         "x265",
         "zlib",
-        "libiconv"
+        "libiconv",
+        "freetype",
+        "exiv2"
       ]
     },
     {
@@ -58,7 +62,9 @@
         "tiff",
         "x265",
         "zlib",
-        "libiconv"
+        "libiconv",
+        "freetype",
+        "exiv2"
       ]
     }
   ]
