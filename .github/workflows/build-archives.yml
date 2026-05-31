@@ -1,0 +1,99 @@
+name: Build Windows vcpkg archives
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - vcpkg-archives.json
+      - scripts/build-vcpkg-archive.ps1
+      - .github/workflows/build-archives.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-windows-vcpkg-archives-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.archive_name }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - archive_name: x64-windows.7z
+            artifact_name: x64-windows
+          - archive_name: x86-windows.7z
+            artifact_name: x86-windows
+          - archive_name: amd64_arm64-windows.7z
+            artifact_name: amd64_arm64-windows
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Cache vcpkg downloads
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ runner.temp }}\vcpkg-downloads
+            ${{ runner.temp }}\vcpkg-binary-cache
+          key: vcpkg-${{ runner.os }}-${{ matrix.artifact_name }}-${{ hashFiles('vcpkg-archives.json') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-${{ matrix.artifact_name }}-
+
+      - name: Build archive
+        shell: pwsh
+        env:
+          VCPKG_DOWNLOADS: ${{ runner.temp }}\vcpkg-downloads
+          VCPKG_DEFAULT_BINARY_CACHE: ${{ runner.temp }}\vcpkg-binary-cache
+        run: >
+          .\scripts\build-vcpkg-archive.ps1
+          -ArchiveName '${{ matrix.archive_name }}'
+          -WorkDir '${{ runner.temp }}\vcpkg-work-${{ matrix.artifact_name }}'
+          -OutputDir '${{ github.workspace }}\artifacts'
+
+      - name: Upload archive artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: artifacts\${{ matrix.archive_name }}
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Commit regenerated archives
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download archives
+        uses: actions/download-artifact@v4
+        with:
+          path: archives
+          merge-multiple: true
+
+      - name: Commit changed archives
+        shell: pwsh
+        run: |
+          Copy-Item -Path archives/*.7z -Destination . -Force
+
+          $status = git status --short -- *.7z
+          if (-not $status) {
+            Write-Host "No archive changes to commit."
+            return
+          }
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add *.7z
+          git commit -m "Update Windows vcpkg archives"
+          git push

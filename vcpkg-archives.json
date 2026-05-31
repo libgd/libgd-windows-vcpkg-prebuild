@@ -1,0 +1,57 @@
+{
+  "vcpkgRepository": "https://github.com/microsoft/vcpkg.git",
+  "vcpkgRef": "85ab112d5ee102bc6eac8cdbbfdd173a71374e04",
+  "archives": [
+    {
+      "archiveName": "x64-windows.7z",
+      "triplet": "x64-windows",
+      "packages": [
+        "brotli",
+        "bzip2",
+        "freetype",
+        "libde265",
+        "libheif",
+        "libjpeg-turbo",
+        "liblzma",
+        "libpng",
+        "libwebp",
+        "tiff",
+        "x265",
+        "zlib"
+      ]
+    },
+    {
+      "archiveName": "x86-windows.7z",
+      "triplet": "x86-windows",
+      "packages": [
+        "brotli",
+        "bzip2",
+        "freetype",
+        "libde265",
+        "libheif",
+        "libjpeg-turbo",
+        "liblzma",
+        "libpng",
+        "libwebp",
+        "tiff",
+        "x265",
+        "zlib"
+      ]
+    },
+    {
+      "archiveName": "amd64_arm64-windows.7z",
+      "triplet": "arm64-windows",
+      "packages": [
+        "brotli",
+        "bzip2",
+        "freetype",
+        "libjpeg-turbo",
+        "liblzma",
+        "libpng",
+        "libwebp",
+        "tiff",
+        "zlib"
+      ]
+    }
+  ]
+}
