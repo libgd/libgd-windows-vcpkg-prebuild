@@ -55,8 +55,7 @@
         "x265",
         "zlib",
         "libiconv",
-        "freetype",
-        "exiv2"
+        "freetype"
       ]
     },
     {

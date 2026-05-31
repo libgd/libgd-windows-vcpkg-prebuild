@@ -226,7 +226,7 @@ if ($archive.Count -ne 1) {
 
 $archive = $archive[0]
 $packages = @($archive.packages)
-$customBuilds = if ($archive.PSObject.Properties.Name -contains "customBuilds") { @($archive.customBuilds) } else { @() }
+[object[]] $customBuilds = if ($archive.PSObject.Properties.Name -contains "customBuilds") { @($archive.customBuilds) } else { @() }
 
 if ($packages.Count -eq 0) {
     throw "Archive '$ArchiveName' does not define any packages."
