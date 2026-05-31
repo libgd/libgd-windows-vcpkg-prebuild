@@ -30,6 +30,9 @@
           "sourceUrl": "https://github.com/AOMediaCodec/libavif/archive/refs/tags/v1.4.2.zip",
           "buildType": "Release",
           "cmakeOptions": [
+            "CMAKE_C_COMPILER=cl",
+            "CMAAKE_CXX_COMPILER=cl",
+            "CMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}",
             "AVIF_CODEC_AOM=SYSTEM",
             "AVIF_CODEC_DAV1D=SYSTEM",
             "BUILD_SHARED_LIBS=ON",
@@ -98,6 +101,9 @@
           "sourceUrl": "https://github.com/AOMediaCodec/libavif/archive/refs/tags/v1.4.2.zip",
           "buildType": "Release",
           "cmakeOptions": [
+            "CMAKE_C_COMPILER=cl",
+            "CMAAKE_CXX_COMPILER=cl",
+            "CMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}",
             "AVIF_CODEC_AOM=SYSTEM",
             "AVIF_CODEC_DAV1D=SYSTEM",
             "BUILD_SHARED_LIBS=ON",
