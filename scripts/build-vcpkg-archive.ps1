@@ -88,6 +88,12 @@ if ($WhatIfPreference) {
 $vcpkgExe = if (Test-Path -LiteralPath $vcpkgExecutable) { (Resolve-Path $vcpkgExecutable).Path } else { Resolve-RequiredCommand $vcpkgExecutable }
 $sevenZip = Resolve-RequiredCommand "7z"
 
+foreach ($cacheDir in @($env:VCPKG_DOWNLOADS, $env:VCPKG_DEFAULT_BINARY_CACHE)) {
+    if (-not [string]::IsNullOrWhiteSpace($cacheDir)) {
+        New-Item -ItemType Directory -Path $cacheDir -Force | Out-Null
+    }
+}
+
 if ($PSCmdlet.ShouldProcess($WorkDir, "recreate vcpkg archive work directory")) {
     if (Test-Path -LiteralPath $WorkDir) {
         Remove-Item -LiteralPath $WorkDir -Recurse -Force
