@@ -29,20 +29,6 @@ function Invoke-NativeCommand {
     }
 }
 
-function Test-NativeCommand {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string] $FilePath,
-
-        [Parameter(ValueFromRemainingArguments = $true)]
-        [string[]] $Arguments
-    )
-
-    Write-Host ">> $FilePath $($Arguments -join ' ')"
-    & $FilePath @Arguments
-    return $LASTEXITCODE -eq 0
-}
-
 function Resolve-RequiredCommand {
     param(
         [Parameter(Mandatory = $true)]
@@ -74,45 +60,32 @@ if ($packages.Count -eq 0) {
 }
 
 $triplet = [string] $archive.triplet
-$vcpkgRepository = [string] $config.vcpkgRepository
-$vcpkgRef = [string] $config.vcpkgRef
-$vcpkgFallbackBranch = if ($config.PSObject.Properties.Name -contains "vcpkgFallbackBranch") { [string] $config.vcpkgFallbackBranch } else { "master" }
+$vcpkgExecutable = if ($config.PSObject.Properties.Name -contains "vcpkgExecutable") { [string] $config.vcpkgExecutable } else { "C:\vcpkg\vcpkg.exe" }
 
 if ([string]::IsNullOrWhiteSpace($triplet)) {
     throw "Archive '$ArchiveName' does not define a triplet."
 }
 
-if ([string]::IsNullOrWhiteSpace($vcpkgRepository)) {
-    throw "Config '$resolvedConfigPath' does not define vcpkgRepository."
+if ([string]::IsNullOrWhiteSpace($vcpkgExecutable)) {
+    throw "Config '$resolvedConfigPath' defines an empty vcpkgExecutable."
 }
 
-if ([string]::IsNullOrWhiteSpace($vcpkgRef)) {
-    throw "Config '$resolvedConfigPath' does not define vcpkgRef."
-}
-
-if ([string]::IsNullOrWhiteSpace($vcpkgFallbackBranch)) {
-    throw "Config '$resolvedConfigPath' defines an empty vcpkgFallbackBranch."
-}
-
-$vcpkgRoot = Join-Path $WorkDir "vcpkg"
-$installedDir = Join-Path $vcpkgRoot "installed"
+$installedDir = Join-Path $WorkDir "installed"
 $tripletDir = Join-Path $installedDir $triplet
 $outputPath = Join-Path $OutputDir $ArchiveName
 
 Write-Host "Archive: $ArchiveName"
 Write-Host "Triplet: $triplet"
-Write-Host "vcpkg repository: $vcpkgRepository"
-Write-Host "vcpkg ref: $vcpkgRef"
-Write-Host "vcpkg fallback branch: $vcpkgFallbackBranch"
+Write-Host "vcpkg executable: $vcpkgExecutable"
 Write-Host "Packages: $($packages -join ', ')"
 Write-Host "Output: $outputPath"
 
 if ($WhatIfPreference) {
-    Write-Host "WhatIf: validated config and command inputs; skipping vcpkg clone, install, and archive creation."
+    Write-Host "WhatIf: validated config and command inputs; skipping vcpkg install and archive creation."
     return
 }
 
-$git = Resolve-RequiredCommand "git"
+$vcpkgExe = if (Test-Path -LiteralPath $vcpkgExecutable) { (Resolve-Path $vcpkgExecutable).Path } else { Resolve-RequiredCommand $vcpkgExecutable }
 $sevenZip = Resolve-RequiredCommand "7z"
 
 if ($PSCmdlet.ShouldProcess($WorkDir, "recreate vcpkg archive work directory")) {
@@ -123,36 +96,8 @@ if ($PSCmdlet.ShouldProcess($WorkDir, "recreate vcpkg archive work directory")) 
     New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
 }
 
-Push-Location $WorkDir
-try {
-    Invoke-NativeCommand $git "init" "vcpkg"
-    Push-Location $vcpkgRoot
-    try {
-        Invoke-NativeCommand $git "remote" "add" "origin" $vcpkgRepository
-        $fetchedPinnedRef = Test-NativeCommand $git "fetch" "--depth" "1" "origin" $vcpkgRef
-
-        if ($fetchedPinnedRef) {
-            Invoke-NativeCommand $git "checkout" "--detach" "FETCH_HEAD"
-        }
-        else {
-            Write-Host "Shallow fetch of '$vcpkgRef' failed. Fetching vcpkg '$vcpkgFallbackBranch' history without blobs and checking out the pinned ref."
-            Invoke-NativeCommand $git "fetch" "--filter=blob:none" "--tags" "origin" $vcpkgFallbackBranch
-            Invoke-NativeCommand $git "checkout" "--detach" $vcpkgRef
-        }
-
-        Invoke-NativeCommand (Join-Path $vcpkgRoot "bootstrap-vcpkg.bat") "-disableMetrics"
-
-        $vcpkgExe = Join-Path $vcpkgRoot "vcpkg.exe"
-        $installArgs = @("install") + $packages + @("--triplet", $triplet, "--clean-after-build")
-        Invoke-NativeCommand $vcpkgExe @installArgs
-    }
-    finally {
-        Pop-Location
-    }
-}
-finally {
-    Pop-Location
-}
+$installArgs = @("install") + $packages + @("--triplet", $triplet, "--x-install-root=$installedDir", "--clean-after-build")
+Invoke-NativeCommand $vcpkgExe @installArgs
 
 if (-not (Test-Path -LiteralPath $tripletDir)) {
     throw "vcpkg completed, but expected package directory was not found: $tripletDir"
