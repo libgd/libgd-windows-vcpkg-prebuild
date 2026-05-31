@@ -39,6 +39,12 @@
             "include/avif/avif.h",
             "lib/avif.lib",
             "lib/cmake/libavif/libavif-config.cmake"
+          ],
+          "copyDirectories": [
+            {
+              "source": "lib/cmake/libavif",
+              "destination": "share/libavif"
+            }
           ]
         }
       ]
@@ -100,6 +106,12 @@
             "include/avif/avif.h",
             "lib/avif.lib",
             "lib/cmake/libavif/libavif-config.cmake"
+          ],
+          "copyDirectories": [
+            {
+              "source": "lib/cmake/libavif",
+              "destination": "share/libavif"
+            }
           ]
         }
       ]

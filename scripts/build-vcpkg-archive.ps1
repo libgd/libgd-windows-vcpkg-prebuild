@@ -120,10 +120,28 @@ function Expand-CustomSourceArchive {
     return $sourceDirectories[0].FullName
 }
 
+function Get-ConfigValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable] $Table,
+
+        [Parameter(Mandatory = $true)]
+        [string] $Key,
+
+        [object] $Default = $null
+    )
+
+    if ($Table.ContainsKey($Key)) {
+        return $Table[$Key]
+    }
+
+    return $Default
+}
+
 function Invoke-CustomCMakeBuild {
     param(
         [Parameter(Mandatory = $true)]
-        [object] $BuildConfig,
+        [hashtable] $BuildConfig,
 
         [Parameter(Mandatory = $true)]
         [string] $Triplet,
@@ -142,14 +160,19 @@ function Invoke-CustomCMakeBuild {
     )
 
     $cmake = Resolve-RequiredCommand "cmake"
-    $name = if ($BuildConfig.PSObject.Properties.Name -contains "name") { [string] $BuildConfig.name } else { "custom-build" }
-    $sourceUrl = if ($BuildConfig.PSObject.Properties.Name -contains "sourceUrl") { [string] $BuildConfig.sourceUrl } else { "" }
-    $buildType = if ($BuildConfig.PSObject.Properties.Name -contains "buildType") { [string] $BuildConfig.buildType } else { "Release" }
-    $cmakeOptions = if ($BuildConfig.PSObject.Properties.Name -contains "cmakeOptions") { @($BuildConfig.cmakeOptions) } else { @() }
+    $name = [string] (Get-ConfigValue -Table $BuildConfig -Key "name" -Default "custom-build")
+    $sourceUrl = [string] (Get-ConfigValue -Table $BuildConfig -Key "sourceUrl" -Default "")
+    $buildType = [string] (Get-ConfigValue -Table $BuildConfig -Key "buildType" -Default "Release")
+    [object[]] $cmakeOptions = @(Get-ConfigValue -Table $BuildConfig -Key "cmakeOptions" -Default @())
     [object[]] $requiredFiles = @()
+    [object[]] $copyDirectories = @()
 
-    if ($BuildConfig.PSObject.Properties.Name -contains "requiredFiles" -and $null -ne $BuildConfig.requiredFiles) {
-        $requiredFiles = @($BuildConfig.requiredFiles)
+    if ($BuildConfig.ContainsKey("requiredFiles") -and $null -ne $BuildConfig["requiredFiles"]) {
+        $requiredFiles = @($BuildConfig["requiredFiles"])
+    }
+
+    if ($BuildConfig.ContainsKey("copyDirectories") -and $null -ne $BuildConfig["copyDirectories"]) {
+        $copyDirectories = @($BuildConfig["copyDirectories"])
     }
 
     if ([string]::IsNullOrWhiteSpace($sourceUrl)) {
@@ -225,31 +248,54 @@ function Invoke-CustomCMakeBuild {
             throw "Custom build '$name' completed, but required file is missing: $requiredPath"
         }
     }
+
+    foreach ($copyDirectory in $copyDirectories) {
+        $sourceRelativePath = [string] (Get-ConfigValue -Table $copyDirectory -Key "source" -Default "")
+        $destinationRelativePath = [string] (Get-ConfigValue -Table $copyDirectory -Key "destination" -Default "")
+
+        if ([string]::IsNullOrWhiteSpace($sourceRelativePath) -or [string]::IsNullOrWhiteSpace($destinationRelativePath)) {
+            throw "Custom build '$name' has an invalid copyDirectories entry."
+        }
+
+        $sourcePath = Join-Path $TripletDir $sourceRelativePath
+        $destinationPath = Join-Path $TripletDir $destinationRelativePath
+
+        if (-not (Test-Path -LiteralPath $sourcePath)) {
+            throw "Custom build '$name' copy source does not exist: $sourcePath"
+        }
+
+        if (Test-Path -LiteralPath $destinationPath) {
+            Remove-Item -LiteralPath $destinationPath -Recurse -Force
+        }
+
+        New-Item -ItemType Directory -Path (Split-Path -Parent $destinationPath) -Force | Out-Null
+        Copy-Item -LiteralPath $sourcePath -Destination $destinationPath -Recurse -Force
+    }
 }
 
 $resolvedConfigPath = (Resolve-Path $ConfigPath).Path
-$config = Get-Content -LiteralPath $resolvedConfigPath -Raw | ConvertFrom-Json
-[object[]] $archive = @($config.archives | Where-Object { $_.archiveName -eq $ArchiveName })
+$config = Get-Content -LiteralPath $resolvedConfigPath -Raw | ConvertFrom-Json -AsHashtable
+[object[]] $archive = @($config["archives"] | Where-Object { $_["archiveName"] -eq $ArchiveName })
 
 if ($archive.Length -ne 1) {
-    $knownArchives = ($config.archives.archiveName -join ", ")
+    $knownArchives = (($config["archives"] | ForEach-Object { $_["archiveName"] }) -join ", ")
     throw "Archive '$ArchiveName' is not defined in $resolvedConfigPath. Known archives: $knownArchives"
 }
 
 $archive = $archive[0]
-[object[]] $packages = @($archive.packages)
+[object[]] $packages = @($archive["packages"])
 [object[]] $customBuilds = @()
 
-if ($archive.PSObject.Properties.Name -contains "customBuilds" -and $null -ne $archive.customBuilds) {
-    $customBuilds = @($archive.customBuilds)
+if ($archive.ContainsKey("customBuilds") -and $null -ne $archive["customBuilds"]) {
+    $customBuilds = @($archive["customBuilds"])
 }
 
 if ($packages.Length -eq 0) {
     throw "Archive '$ArchiveName' does not define any packages."
 }
 
-$triplet = [string] $archive.triplet
-$vcpkgExecutable = if ($config.PSObject.Properties.Name -contains "vcpkgExecutable") { [string] $config.vcpkgExecutable } else { "C:\vcpkg\vcpkg.exe" }
+$triplet = [string] $archive["triplet"]
+$vcpkgExecutable = [string] (Get-ConfigValue -Table $config -Key "vcpkgExecutable" -Default "C:\vcpkg\vcpkg.exe")
 
 if ([string]::IsNullOrWhiteSpace($triplet)) {
     throw "Archive '$ArchiveName' does not define a triplet."
@@ -268,6 +314,9 @@ Write-Host "Triplet: $triplet"
 Write-Host "vcpkg executable: $vcpkgExecutable"
 Write-Host "Packages: $($packages -join ', ')"
 Write-Host "Custom builds: $($customBuilds.Length)"
+if ($customBuilds.Length -gt 0) {
+    Write-Host "Custom build names: $(($customBuilds | ForEach-Object { $_["name"] }) -join ', ')"
+}
 Write-Host "Output: $outputPath"
 
 if ($WhatIfPreference) {
