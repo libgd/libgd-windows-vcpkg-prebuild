@@ -131,11 +131,74 @@ function Get-ConfigValue {
         [object] $Default = $null
     )
 
+    if ($null -ne $Object -and $Object -is [System.Collections.IDictionary] -and $Object.Contains($Key)) {
+        return $Object[$Key]
+    }
+
     if ($null -ne $Object -and $Object.PSObject.Properties.Name -contains $Key) {
         return $Object.$Key
     }
 
     return $Default
+}
+
+function Convert-JsonElement {
+    param(
+        [Parameter(Mandatory = $true)]
+        [System.Text.Json.JsonElement] $Element
+    )
+
+    switch ($Element.ValueKind) {
+        ([System.Text.Json.JsonValueKind]::Object) {
+            $result = [ordered] @{}
+            foreach ($property in $Element.EnumerateObject()) {
+                $result[$property.Name] = Convert-JsonElement -Element $property.Value
+            }
+            return $result
+        }
+        ([System.Text.Json.JsonValueKind]::Array) {
+            $result = New-Object System.Collections.ArrayList
+            foreach ($item in $Element.EnumerateArray()) {
+                [void] $result.Add((Convert-JsonElement -Element $item))
+            }
+            return $result.ToArray()
+        }
+        ([System.Text.Json.JsonValueKind]::String) {
+            return $Element.GetString()
+        }
+        ([System.Text.Json.JsonValueKind]::Number) {
+            $number = 0L
+            if ($Element.TryGetInt64([ref] $number)) {
+                return $number
+            }
+            return $Element.GetDouble()
+        }
+        ([System.Text.Json.JsonValueKind]::True) {
+            return $true
+        }
+        ([System.Text.Json.JsonValueKind]::False) {
+            return $false
+        }
+        default {
+            return $null
+        }
+    }
+}
+
+function Read-JsonConfig {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $Path
+    )
+
+    $json = Get-Content -LiteralPath $Path -Raw
+    $document = [System.Text.Json.JsonDocument]::Parse($json)
+    try {
+        return Convert-JsonElement -Element $document.RootElement
+    }
+    finally {
+        $document.Dispose()
+    }
 }
 
 function Invoke-CustomCMakeBuild {
@@ -276,8 +339,9 @@ function Invoke-CustomCMakeBuild {
 }
 
 $resolvedConfigPath = (Resolve-Path $ConfigPath).Path
-$config = Get-Content -LiteralPath $resolvedConfigPath -Raw | ConvertFrom-Json
+$config = Read-JsonConfig -Path $resolvedConfigPath
 [object[]] $archives = @(Get-ConfigValue -Object $config -Key "archives" -Default @())
+Write-Host "Loaded $($archives.Length) archive definitions from $resolvedConfigPath"
 [object[]] $archive = @($archives | Where-Object { (Get-ConfigValue -Object $_ -Key "archiveName" -Default "") -eq $ArchiveName })
 
 if ($archive.Length -ne 1) {
