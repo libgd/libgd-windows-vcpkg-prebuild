@@ -49,6 +49,7 @@ jobs:
       - name: Build archive
         shell: pwsh
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           VCPKG_DOWNLOADS: ${{ runner.temp }}\vcpkg-downloads
           VCPKG_DEFAULT_BINARY_CACHE: ${{ runner.temp }}\vcpkg-binary-cache
         run: >

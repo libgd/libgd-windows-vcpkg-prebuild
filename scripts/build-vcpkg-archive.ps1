@@ -43,6 +43,36 @@ function Resolve-RequiredCommand {
     return $command.Source
 }
 
+function Invoke-NativeCommandWithRetry {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $FilePath,
+
+        [int] $Attempts = 3,
+
+        [int] $DelaySeconds = 60,
+
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]] $Arguments
+    )
+
+    for ($attempt = 1; $attempt -le $Attempts; $attempt++) {
+        try {
+            Invoke-NativeCommand $FilePath @Arguments
+            return
+        }
+        catch {
+            if ($attempt -eq $Attempts) {
+                throw
+            }
+
+            Write-Warning "Attempt $attempt of $Attempts failed: $($_.Exception.Message)"
+            Write-Host "Waiting $DelaySeconds seconds before retrying..."
+            Start-Sleep -Seconds $DelaySeconds
+        }
+    }
+}
+
 $resolvedConfigPath = (Resolve-Path $ConfigPath).Path
 $config = Get-Content -LiteralPath $resolvedConfigPath -Raw | ConvertFrom-Json
 $archive = @($config.archives | Where-Object { $_.archiveName -eq $ArchiveName })
@@ -103,7 +133,8 @@ if ($PSCmdlet.ShouldProcess($WorkDir, "recreate vcpkg archive work directory")) 
 }
 
 $installArgs = @("install") + $packages + @("--triplet", $triplet, "--x-install-root=$installedDir", "--clean-after-build")
-Invoke-NativeCommand $vcpkgExe @installArgs
+Write-Host "Running vcpkg install with up to 3 attempts."
+Invoke-NativeCommandWithRetry $vcpkgExe -Attempts 3 -DelaySeconds 60 @installArgs
 
 if (-not (Test-Path -LiteralPath $tripletDir)) {
     throw "vcpkg completed, but expected package directory was not found: $tripletDir"
