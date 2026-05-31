@@ -17,7 +17,8 @@
         "libwebp",
         "tiff",
         "x265",
-        "zlib"
+        "zlib",
+        "libiconv"
       ]
     },
     {
@@ -36,7 +37,8 @@
         "libwebp",
         "tiff",
         "x265",
-        "zlib"
+        "zlib",
+        "libiconv"
       ]
     },
     {
@@ -55,7 +57,8 @@
         "libwebp",
         "tiff",
         "x265",
-        "zlib"
+        "zlib",
+        "libiconv"
       ]
     }
   ]
