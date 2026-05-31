@@ -10,6 +10,7 @@
         "freetype",
         "libde265",
         "libheif",
+        "libavif",
         "libjpeg-turbo",
         "liblzma",
         "libpng",
@@ -28,6 +29,7 @@
         "freetype",
         "libde265",
         "libheif",
+        "libavif",
         "libjpeg-turbo",
         "liblzma",
         "libpng",
@@ -44,11 +46,15 @@
         "brotli",
         "bzip2",
         "freetype",
+        "libde265",
+        "libheif",
+        "libavif",
         "libjpeg-turbo",
         "liblzma",
         "libpng",
         "libwebp",
         "tiff",
+        "x265",
         "zlib"
       ]
     }
