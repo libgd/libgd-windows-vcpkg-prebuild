@@ -27,14 +27,22 @@ jobs:
         include:
           - archive_name: x64-windows.7z
             artifact_name: x64-windows
+            msvc_arch: amd64
           - archive_name: x86-windows.7z
             artifact_name: x86-windows
+            msvc_arch: amd64_x86
           - archive_name: amd64_arm64-windows.7z
             artifact_name: amd64_arm64-windows
+            msvc_arch: amd64_arm64
 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+
+      - name: Configure MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
 
       - name: Cache vcpkg downloads
         uses: actions/cache@v4
