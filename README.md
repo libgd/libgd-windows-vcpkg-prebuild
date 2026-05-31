@@ -18,5 +18,10 @@ available on the Windows GitHub Actions runner, builds the configured triplets,
 and commits changed `.7z` archives back to `main`, which keeps the existing raw
 GitHub download URLs used by libgd Windows CI working.
 
+Some archives also define `customBuilds` in `vcpkg-archives.json`. These run
+after vcpkg package installation and install extra CMake-built libraries, such
+as libavif with system aom and dav1d codecs, into the same triplet directory
+before the archive is created.
+
 `amd64_arm64-windows.7z` intentionally contains a top-level `arm64-windows`
 directory, matching the current libgd CI extraction behavior.

@@ -22,6 +22,20 @@
         "exiv2",
         "aom",
         "dav1d"
+      ],
+      "customBuilds": [
+        {
+          "name": "libavif",
+          "sourceUrl": "https://github.com/AOMediaCodec/libavif/archive/refs/tags/v1.4.2.zip",
+          "buildType": "Release",
+          "cmakeOptions": [
+            "AVIF_CODEC_AOM=SYSTEM",
+            "AVIF_CODEC_DAV1D=SYSTEM",
+            "BUILD_SHARED_LIBS=ON",
+            "AVIF_BUILD_APPS=OFF",
+            "AVIF_BUILD_TESTS=OFF"
+          ]
+        }
       ]
     },
     {
@@ -66,6 +80,20 @@
         "exiv2",
         "aom",
         "dav1d"
+      ],
+      "customBuilds": [
+        {
+          "name": "libavif",
+          "sourceUrl": "https://github.com/AOMediaCodec/libavif/archive/refs/tags/v1.4.2.zip",
+          "buildType": "Release",
+          "cmakeOptions": [
+            "AVIF_CODEC_AOM=SYSTEM",
+            "AVIF_CODEC_DAV1D=SYSTEM",
+            "BUILD_SHARED_LIBS=ON",
+            "AVIF_BUILD_APPS=OFF",
+            "AVIF_BUILD_TESTS=OFF"
+          ]
+        }
       ]
     }
   ]
