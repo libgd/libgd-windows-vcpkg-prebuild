@@ -146,6 +146,11 @@ function Invoke-CustomCMakeBuild {
     $sourceUrl = if ($BuildConfig.PSObject.Properties.Name -contains "sourceUrl") { [string] $BuildConfig.sourceUrl } else { "" }
     $buildType = if ($BuildConfig.PSObject.Properties.Name -contains "buildType") { [string] $BuildConfig.buildType } else { "Release" }
     $cmakeOptions = if ($BuildConfig.PSObject.Properties.Name -contains "cmakeOptions") { @($BuildConfig.cmakeOptions) } else { @() }
+    [object[]] $requiredFiles = @()
+
+    if ($BuildConfig.PSObject.Properties.Name -contains "requiredFiles" -and $null -ne $BuildConfig.requiredFiles) {
+        $requiredFiles = @($BuildConfig.requiredFiles)
+    }
 
     if ([string]::IsNullOrWhiteSpace($sourceUrl)) {
         throw "Custom build '$name' does not define sourceUrl."
@@ -213,6 +218,13 @@ function Invoke-CustomCMakeBuild {
 
     Write-Host "Installing custom build '$name'"
     Invoke-NativeCommand $cmake "--install" $buildDir "--config" $buildType
+
+    foreach ($requiredFile in $requiredFiles) {
+        $requiredPath = Join-Path $TripletDir ([string] $requiredFile)
+        if (-not (Test-Path -LiteralPath $requiredPath)) {
+            throw "Custom build '$name' completed, but required file is missing: $requiredPath"
+        }
+    }
 }
 
 $resolvedConfigPath = (Resolve-Path $ConfigPath).Path

@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: build-windows-vcpkg-archives-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -81,6 +81,15 @@ jobs:
         with:
           path: archives
           merge-multiple: true
+
+      - name: Stop if main moved
+        shell: bash
+        run: |
+          git fetch origin main
+          if [ "$(git rev-parse origin/main)" != "${{ github.sha }}" ]; then
+            echo "main moved after this workflow started; skipping stale archive publish."
+            exit 1
+          fi
 
       - name: Commit changed archives
         shell: pwsh

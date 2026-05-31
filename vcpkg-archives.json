@@ -34,6 +34,11 @@
             "BUILD_SHARED_LIBS=ON",
             "AVIF_BUILD_APPS=OFF",
             "AVIF_BUILD_TESTS=OFF"
+          ],
+          "requiredFiles": [
+            "include/avif/avif.h",
+            "lib/avif.lib",
+            "lib/cmake/libavif/libavif-config.cmake"
           ]
         }
       ]
@@ -90,6 +95,11 @@
             "BUILD_SHARED_LIBS=ON",
             "AVIF_BUILD_APPS=OFF",
             "AVIF_BUILD_TESTS=OFF"
+          ],
+          "requiredFiles": [
+            "include/avif/avif.h",
+            "lib/avif.lib",
+            "lib/cmake/libavif/libavif-config.cmake"
           ]
         }
       ]
