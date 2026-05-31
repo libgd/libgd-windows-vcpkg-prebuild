@@ -52,7 +52,6 @@
         "libpng",
         "libwebp",
         "tiff",
-        "x265",
         "zlib",
         "libiconv",
         "freetype"

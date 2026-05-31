@@ -112,9 +112,9 @@ function Expand-CustomSourceArchive {
     New-Item -ItemType Directory -Path $DestinationPath -Force | Out-Null
     Expand-Archive -LiteralPath $ArchivePath -DestinationPath $DestinationPath -Force
 
-    $sourceDirectories = @(Get-ChildItem -LiteralPath $DestinationPath -Directory)
-    if ($sourceDirectories.Count -ne 1) {
-        throw "Expected exactly one top-level source directory in '$ArchivePath', found $($sourceDirectories.Count)."
+    [object[]] $sourceDirectories = @(Get-ChildItem -LiteralPath $DestinationPath -Directory)
+    if ($sourceDirectories.Length -ne 1) {
+        throw "Expected exactly one top-level source directory in '$ArchivePath', found $($sourceDirectories.Length)."
     }
 
     return $sourceDirectories[0].FullName
@@ -217,18 +217,22 @@ function Invoke-CustomCMakeBuild {
 
 $resolvedConfigPath = (Resolve-Path $ConfigPath).Path
 $config = Get-Content -LiteralPath $resolvedConfigPath -Raw | ConvertFrom-Json
-$archive = @($config.archives | Where-Object { $_.archiveName -eq $ArchiveName })
+[object[]] $archive = @($config.archives | Where-Object { $_.archiveName -eq $ArchiveName })
 
-if ($archive.Count -ne 1) {
+if ($archive.Length -ne 1) {
     $knownArchives = ($config.archives.archiveName -join ", ")
     throw "Archive '$ArchiveName' is not defined in $resolvedConfigPath. Known archives: $knownArchives"
 }
 
 $archive = $archive[0]
-$packages = @($archive.packages)
-[object[]] $customBuilds = if ($archive.PSObject.Properties.Name -contains "customBuilds") { @($archive.customBuilds) } else { @() }
+[object[]] $packages = @($archive.packages)
+[object[]] $customBuilds = @()
 
-if ($packages.Count -eq 0) {
+if ($archive.PSObject.Properties.Name -contains "customBuilds" -and $null -ne $archive.customBuilds) {
+    $customBuilds = @($archive.customBuilds)
+}
+
+if ($packages.Length -eq 0) {
     throw "Archive '$ArchiveName' does not define any packages."
 }
 
@@ -251,7 +255,7 @@ Write-Host "Archive: $ArchiveName"
 Write-Host "Triplet: $triplet"
 Write-Host "vcpkg executable: $vcpkgExecutable"
 Write-Host "Packages: $($packages -join ', ')"
-Write-Host "Custom builds: $($customBuilds.Count)"
+Write-Host "Custom builds: $($customBuilds.Length)"
 Write-Host "Output: $outputPath"
 
 if ($WhatIfPreference) {
