@@ -29,6 +29,20 @@ function Invoke-NativeCommand {
     }
 }
 
+function Test-NativeCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string] $FilePath,
+
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]] $Arguments
+    )
+
+    Write-Host ">> $FilePath $($Arguments -join ' ')"
+    & $FilePath @Arguments
+    return $LASTEXITCODE -eq 0
+}
+
 function Resolve-RequiredCommand {
     param(
         [Parameter(Mandatory = $true)]
@@ -62,6 +76,7 @@ if ($packages.Count -eq 0) {
 $triplet = [string] $archive.triplet
 $vcpkgRepository = [string] $config.vcpkgRepository
 $vcpkgRef = [string] $config.vcpkgRef
+$vcpkgFallbackBranch = if ($config.PSObject.Properties.Name -contains "vcpkgFallbackBranch") { [string] $config.vcpkgFallbackBranch } else { "master" }
 
 if ([string]::IsNullOrWhiteSpace($triplet)) {
     throw "Archive '$ArchiveName' does not define a triplet."
@@ -75,6 +90,10 @@ if ([string]::IsNullOrWhiteSpace($vcpkgRef)) {
     throw "Config '$resolvedConfigPath' does not define vcpkgRef."
 }
 
+if ([string]::IsNullOrWhiteSpace($vcpkgFallbackBranch)) {
+    throw "Config '$resolvedConfigPath' defines an empty vcpkgFallbackBranch."
+}
+
 $vcpkgRoot = Join-Path $WorkDir "vcpkg"
 $installedDir = Join-Path $vcpkgRoot "installed"
 $tripletDir = Join-Path $installedDir $triplet
@@ -84,6 +103,7 @@ Write-Host "Archive: $ArchiveName"
 Write-Host "Triplet: $triplet"
 Write-Host "vcpkg repository: $vcpkgRepository"
 Write-Host "vcpkg ref: $vcpkgRef"
+Write-Host "vcpkg fallback branch: $vcpkgFallbackBranch"
 Write-Host "Packages: $($packages -join ', ')"
 Write-Host "Output: $outputPath"
 
@@ -109,8 +129,16 @@ try {
     Push-Location $vcpkgRoot
     try {
         Invoke-NativeCommand $git "remote" "add" "origin" $vcpkgRepository
-        Invoke-NativeCommand $git "fetch" "--depth" "1" "origin" $vcpkgRef
-        Invoke-NativeCommand $git "checkout" "--detach" "FETCH_HEAD"
+        $fetchedPinnedRef = Test-NativeCommand $git "fetch" "--depth" "1" "origin" $vcpkgRef
+
+        if ($fetchedPinnedRef) {
+            Invoke-NativeCommand $git "checkout" "--detach" "FETCH_HEAD"
+        }
+        else {
+            Write-Host "Shallow fetch of '$vcpkgRef' failed. Fetching vcpkg '$vcpkgFallbackBranch' history without blobs and checking out the pinned ref."
+            Invoke-NativeCommand $git "fetch" "--filter=blob:none" "--tags" "origin" $vcpkgFallbackBranch
+            Invoke-NativeCommand $git "checkout" "--detach" $vcpkgRef
+        }
 
         Invoke-NativeCommand (Join-Path $vcpkgRoot "bootstrap-vcpkg.bat") "-disableMetrics"
 

@@ -1,6 +1,7 @@
 {
   "vcpkgRepository": "https://github.com/microsoft/vcpkg.git",
   "vcpkgRef": "85ab112d5ee102bc6eac8cdbbfdd173a71374e04",
+  "vcpkgFallbackBranch": "master",
   "archives": [
     {
       "archiveName": "x64-windows.7z",
