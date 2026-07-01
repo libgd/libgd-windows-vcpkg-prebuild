@@ -48,6 +48,49 @@
               "destination": "share/libavif"
             }
           ]
+        },
+        {
+          "name": "libultrahdr",
+          "sourceUrl": "https://github.com/google/libultrahdr/archive/refs/tags/v1.4.0.zip",
+          "buildType": "Release",
+          "cmakeOptions": [
+            "BUILD_SHARED_LIBS=ON",
+            "UHDR_BUILD_EXAMPLES=OFF",
+            "UHDR_BUILD_TESTS=OFF",
+            "UHDR_BUILD_BENCHMARK=OFF",
+            "UHDR_BUILD_FUZZERS=OFF",
+            "UHDR_BUILD_DEPS=OFF",
+            "UHDR_BUILD_JAVA=OFF",
+            "UHDR_BUILD_PACKAGING=OFF",
+            "UHDR_ENABLE_GLES=OFF",
+            "UHDR_ENABLE_WERROR=OFF",
+            "UHDR_WRITE_XMP=OFF"
+          ],
+          "copyFiles": [
+            {
+              "from": "source",
+              "source": "ultrahdr_api.h",
+              "destination": "include/ultrahdr_api.h"
+            },
+            {
+              "source": "uhdr.dll",
+              "destination": "bin/uhdr.dll"
+            },
+            {
+              "source": "uhdr.lib",
+              "destination": "lib/uhdr.lib"
+            },
+            {
+              "source": "uhdr-static.lib",
+              "destination": "lib/uhdr-static.lib"
+            }
+          ],
+          "requiredFiles": [
+            "include/ultrahdr_api.h",
+            "bin/uhdr.dll",
+            "lib/uhdr.lib",
+            "lib/uhdr-static.lib"
+          ]
         }
       ]
     },
@@ -69,6 +112,51 @@
         "zlib",
         "libiconv",
         "freetype"
+      ],
+      "customBuilds": [
+        {
+          "name": "libultrahdr",
+          "sourceUrl": "https://github.com/google/libultrahdr/archive/refs/tags/v1.4.0.zip",
+          "buildType": "Release",
+          "cmakeOptions": [
+            "BUILD_SHARED_LIBS=ON",
+            "UHDR_BUILD_EXAMPLES=OFF",
+            "UHDR_BUILD_TESTS=OFF",
+            "UHDR_BUILD_BENCHMARK=OFF",
+            "UHDR_BUILD_FUZZERS=OFF",
+            "UHDR_BUILD_DEPS=OFF",
+            "UHDR_BUILD_JAVA=OFF",
+            "UHDR_BUILD_PACKAGING=OFF",
+            "UHDR_ENABLE_GLES=OFF",
+            "UHDR_ENABLE_WERROR=OFF",
+            "UHDR_WRITE_XMP=OFF"
+          ],
+          "copyFiles": [
+            {
+              "from": "source",
+              "source": "ultrahdr_api.h",
+              "destination": "include/ultrahdr_api.h"
+            },
+            {
+              "source": "uhdr.dll",
+              "destination": "bin/uhdr.dll"
+            },
+            {
+              "source": "uhdr.lib",
+              "destination": "lib/uhdr.lib"
+            },
+            {
+              "source": "uhdr-static.lib",
+              "destination": "lib/uhdr-static.lib"
+            }
+          ],
+          "requiredFiles": [
+            "include/ultrahdr_api.h",
+            "bin/uhdr.dll",
+            "lib/uhdr.lib",
+            "lib/uhdr-static.lib"
+          ]
+        }
       ]
     },
     {
@@ -117,6 +205,49 @@
               "source": "lib/cmake/libavif",
               "destination": "share/libavif"
             }
+          ]
+        },
+        {
+          "name": "libultrahdr",
+          "sourceUrl": "https://github.com/google/libultrahdr/archive/refs/tags/v1.4.0.zip",
+          "buildType": "Release",
+          "cmakeOptions": [
+            "BUILD_SHARED_LIBS=ON",
+            "UHDR_BUILD_EXAMPLES=OFF",
+            "UHDR_BUILD_TESTS=OFF",
+            "UHDR_BUILD_BENCHMARK=OFF",
+            "UHDR_BUILD_FUZZERS=OFF",
+            "UHDR_BUILD_DEPS=OFF",
+            "UHDR_BUILD_JAVA=OFF",
+            "UHDR_BUILD_PACKAGING=OFF",
+            "UHDR_ENABLE_GLES=OFF",
+            "UHDR_ENABLE_WERROR=OFF",
+            "UHDR_WRITE_XMP=OFF"
+          ],
+          "copyFiles": [
+            {
+              "from": "source",
+              "source": "ultrahdr_api.h",
+              "destination": "include/ultrahdr_api.h"
+            },
+            {
+              "source": "uhdr.dll",
+              "destination": "bin/uhdr.dll"
+            },
+            {
+              "source": "uhdr.lib",
+              "destination": "lib/uhdr.lib"
+            },
+            {
+              "source": "uhdr-static.lib",
+              "destination": "lib/uhdr-static.lib"
+            }
+          ],
+          "requiredFiles": [
+            "include/ultrahdr_api.h",
+            "bin/uhdr.dll",
+            "lib/uhdr.lib",
+            "lib/uhdr-static.lib"
           ]
         }
       ]

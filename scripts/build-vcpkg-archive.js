@@ -78,12 +78,21 @@ function copyDirectory(sourcePath, destinationPath) {
   fs.cpSync(sourcePath, destinationPath, { recursive: true, force: true });
 }
 
+function copyFile(sourcePath, destinationPath) {
+  if (!fs.existsSync(sourcePath)) {
+    throw new Error(`Copy source does not exist: ${sourcePath}`);
+  }
+  mkdirp(path.dirname(destinationPath));
+  fs.copyFileSync(sourcePath, destinationPath);
+}
+
 function customBuild(buildConfig, context) {
   const name = buildConfig.name || "custom-build";
   const sourceUrl = buildConfig.sourceUrl;
   const buildType = buildConfig.buildType || "Release";
   const cmakeOptions = buildConfig.cmakeOptions || [];
   const requiredFiles = buildConfig.requiredFiles || [];
+  const copyFiles = buildConfig.copyFiles || [];
   const copyDirectories = buildConfig.copyDirectories || [];
 
   if (!sourceUrl) {
@@ -135,6 +144,19 @@ function customBuild(buildConfig, context) {
   run("cmake", ["--build", buildDir, "--config", buildType]);
   console.log(`Installing custom build '${name}'`);
   run("cmake", ["--install", buildDir, "--config", buildType]);
+
+  const copyRoots = {
+    source: sourceDir,
+    build: buildDir,
+    install: context.tripletDir,
+  };
+  for (const copy of copyFiles) {
+    const sourceRoot = copyRoots[copy.from || "build"];
+    if (!sourceRoot) {
+      throw new Error(`Custom build '${name}' has an unknown copy source: ${copy.from}`);
+    }
+    copyFile(path.join(sourceRoot, copy.source), path.join(context.tripletDir, copy.destination));
+  }
 
   for (const requiredFile of requiredFiles) {
     const requiredPath = path.join(context.tripletDir, requiredFile);
